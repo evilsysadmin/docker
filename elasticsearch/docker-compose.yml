@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  cerebro:
+    image: lmenezes/cerebro:${CEREBRO_VERSION}
+    container_name: cerebro
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1g512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9000:9000
+    networks:
+      - elasticnet
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1G -Xmx1G"
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - elasticnet
+
+  kibana:
+     depends_on:
+     - elasticsearch
+     environment:
+       ELASTICSEARCH_PASSWORD: elastic
+       ELASTICSEARCH_URL: http://elasticsearch:9200
+       ELASTICSEARCH_USERNAME: elastic
+     image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
+     networks:
+       - elasticnet
+     ports:
+     - 5601:5601
+     restart: unless-stopped
+
+volumes:
+  es-data1:
+    driver: local
+
+networks:
+  elasticnet:
